@@ -13,8 +13,11 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.webkit.ValueCallback;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.content.SharedPreferences;
 
 import com.getcapacitor.android.BuildConfig;
@@ -105,7 +108,6 @@ public class Bridge {
   private final WebView webView;
   public final CordovaInterfaceImpl cordovaInterface;
   private CordovaPreferences preferences;
-  private BridgeWebViewClient webViewClient;
 
   // Our MessageHandler for sending and receiving data to the WebView
   private final MessageHandler msgHandler;
@@ -141,7 +143,6 @@ public class Bridge {
   public Bridge(Activity context, WebView webView, List<Class<? extends Plugin>> initialPlugins, CordovaInterfaceImpl cordovaInterface, PluginManager pluginManager, CordovaPreferences preferences) {
     this.context = context;
     this.webView = webView;
-    this.webViewClient = new BridgeWebViewClient(this);
     this.initialPlugins = initialPlugins;
     this.cordovaInterface = cordovaInterface;
     this.preferences = preferences;
@@ -212,7 +213,36 @@ public class Bridge {
     Log.d(LOG_TAG, "Loading app at " + appUrl);
 
     webView.setWebChromeClient(new BridgeWebChromeClient(this));
-    webView.setWebViewClient(this.webViewClient);
+    webView.setWebViewClient(new WebViewClient() {
+      @Override
+      public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+        return localServer.shouldInterceptRequest(request);
+      }
+
+      @Override
+      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+        Uri url = request.getUrl();
+        return launchIntent(url);
+      }
+
+      @Override
+      public boolean shouldOverrideUrlLoading(WebView view, String url) {
+        return launchIntent(Uri.parse(url));
+      }
+
+      private boolean launchIntent(Uri url) {
+        if (!url.toString().contains(appUrl) && !appAllowNavigationMask.matches(url.getHost())) {
+          try {
+            Intent openIntent = new Intent(Intent.ACTION_VIEW, url);
+            getContext().startActivity(openIntent);
+          } catch (ActivityNotFoundException e) {
+            // TODO - trigger an event
+          }
+          return true;
+        }
+        return false;
+      }
+    });
 
     if (!isDeployDisabled() && !isNewBinary()) {
       SharedPreferences prefs = getContext().getSharedPreferences(com.getcapacitor.plugin.WebView.WEBVIEW_PREFS_NAME, Activity.MODE_PRIVATE);
@@ -223,19 +253,6 @@ public class Bridge {
     }
     // Get to work
     webView.loadUrl(appUrl);
-  }
-
-  public boolean launchIntent(Uri url) {
-    if (!url.toString().contains(appUrl) && !appAllowNavigationMask.matches(url.getHost())) {
-      try {
-        Intent openIntent = new Intent(Intent.ACTION_VIEW, url);
-        getContext().startActivity(openIntent);
-      } catch (ActivityNotFoundException e) {
-        // TODO - trigger an event
-      }
-      return true;
-    }
-    return false;
   }
 
 
@@ -654,7 +671,7 @@ public class Bridge {
   protected void storeDanglingPluginResult(PluginCall call, PluginResult result) {
     PluginHandle appHandle = getPlugin("App");
     App appPlugin = (App) appHandle.getInstance();
-    appPlugin.fireRestoredResult(result);
+    appPlugin.fireRestoredResult(result.getWrappedResult(call));
   }
 
   /**
@@ -829,15 +846,6 @@ public class Bridge {
     }
   }
 
-  /**
-   * Handle onDestroy lifecycle event and notify the plugins
-   */
-  public void onDestroy() {
-    for (PluginHandle plugin : plugins.values()) {
-      plugin.getInstance().handleOnDestroy();
-    }
-  }
-
   public void onBackPressed() {
     PluginHandle appHandle = getPlugin("App");
     if (appHandle != null) {
@@ -882,13 +890,4 @@ public class Bridge {
   public HostMask getAppAllowNavigationMask() {
     return appAllowNavigationMask;
   }
-
-  public BridgeWebViewClient getWebViewClient() {
-    return this.webViewClient;
-  }
-
-  public void setWebViewClient(BridgeWebViewClient client) {
-    this.webViewClient = client;
-  }
-
 }

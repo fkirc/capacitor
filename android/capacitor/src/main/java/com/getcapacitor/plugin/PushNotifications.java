@@ -10,11 +10,11 @@ import android.media.AudioAttributes;
 import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
-import androidx.core.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat;
 import android.net.Uri;
 
-import android.util.Log;
 
+import android.util.Log;
 import com.getcapacitor.Bridge;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -105,13 +105,6 @@ public class PushNotifications extends Plugin {
       }
     });
     call.success();
-  }
-
-  @PluginMethod()
-  public void requestPermission(PluginCall call) {
-    JSObject result = new JSObject();
-    result.put("granted", true);
-    call.success(result);
   }
 
   @PluginMethod()

@@ -71,18 +71,28 @@ public class PluginResult {
     return this.json.toString();
   }
 
+  public JSObject getData() {
+    try {
+      return this.json.getJSObject("data", new JSObject());
+    } catch (JSONException ex) {
+      return null;
+    }
+  }
+
   /**
-   * Return plugin metadata and information about the result, if it succeeded the data, or error information if it didn't.
-   * This is used for appRestoredResult, as it's technically a raw data response from a plugin.
-   * @return the raw data response from the plugin.
+   * Return a new data object with the actual payload data
+   * along side additional metadata about the plugin. This is used
+   * for appRestoredResult, as it's technically a raw data response
+   * from a plugin, but with metadata about the plugin.
+   * @return
    */
-  public JSObject getWrappedResult() {
+  public PluginResult getWrappedResult(PluginCall call) {
     JSObject ret = new JSObject();
-    ret.put("pluginId", this.json.getString("pluginId"));
-    ret.put("methodName", this.json.getString("methodName"));
-    ret.put("success", this.json.getBoolean("success", false));
-    ret.put("data", this.json.getJSObject("data"));
-    ret.put("error", this.json.getJSObject("error"));
-    return ret;
+    JSObject data = new JSObject();
+    data.put("pluginId", call.getPluginId());
+    data.put("methodName", call.getMethodName());
+    data.put("data", getData());
+    ret.put("data", data);
+    return new PluginResult(ret);
   }
 }
