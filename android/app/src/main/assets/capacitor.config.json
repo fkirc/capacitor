@@ -8,5 +8,8 @@
     "SplashScreen": {
       "launchShowDuration": 0
     }
+  },
+  "server": {
+    "url": "http://localhost/not-existing:8100"
   }
 }

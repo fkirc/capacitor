@@ -1,21 +1,21 @@
 package com.captemplate;
 
+import android.net.Uri;
 import android.os.Bundle;
 
-import com.getcapacitor.BridgeActivity;
-import com.getcapacitor.Plugin;
+import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.ArrayList;
+import com.getcapacitor.BridgeFragment;
 
-public class MainActivity extends BridgeActivity {
+public class MainActivity extends AppCompatActivity implements BridgeFragment.OnFragmentInteractionListener {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+  }
 
-    // Initializes the Bridge
-    this.init(savedInstanceState, new ArrayList<Class<? extends Plugin>>() {{
-      // Additional plugins you've installed go here
-      // Ex: add(TotallyAwesomePlugin.class);
-    }});
+  @Override
+  public void onFragmentInteraction(Uri uri) {
+    // Ignore
   }
 }
