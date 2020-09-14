@@ -1,0 +1,12 @@
+{
+  "appId": "com.captemplate",
+  "appName": "captemplate",
+  "bundledWebRuntime": true,
+  "npmClient": "npm",
+  "webDir": "www",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}
